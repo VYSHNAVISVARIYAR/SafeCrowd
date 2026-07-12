@@ -4,6 +4,7 @@ import os
 import cv2
 import numpy as np
 from ultralytics import YOLO
+import asyncio
 
 app = FastAPI()
 
@@ -20,12 +21,16 @@ def home():
 
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
-    save_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    with open(save_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    try:
+        save_path = os.path.join(UPLOAD_FOLDER, file.filename)
+        with open(save_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    result = analyze_video(save_path)
-    return result
+        result = await asyncio.to_thread(analyze_video, save_path)
+        return result
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 
 def analyze_video(video_path):
@@ -36,7 +41,14 @@ def analyze_video(video_path):
     if not ret:
         return {"error": "Could not read video"}
 
-    prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+    # Resize frame to speed up calculation (scale down to 480px width)
+    h, w = prev_frame.shape[:2]
+    scale = 480.0 / w if w > 480 else 1.0
+    target_w = int(w * scale)
+    target_h = int(h * scale)
+
+    prev_frame_resized = cv2.resize(prev_frame, (target_w, target_h))
+    prev_gray = cv2.cvtColor(prev_frame_resized, cv2.COLOR_BGR2GRAY)
 
     frame_num = 0
     people_count = 0
@@ -98,8 +110,8 @@ def analyze_video(video_path):
 
     return {
         "status": overall_status,
-        "max_risk_score": round(max_risk, 2),
-        "danger_percent_of_video": round(danger_percent, 1),
-        "total_frames_checked": total_checked_frames,
-        "last_people_count": people_count
+        "max_risk_score": round(float(max_risk), 2),
+        "danger_percent_of_video": round(float(danger_percent), 1),
+        "total_frames_checked": int(total_checked_frames),
+        "last_people_count": int(people_count)
     }
