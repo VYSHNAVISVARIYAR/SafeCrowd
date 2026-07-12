@@ -1,0 +1,6 @@
+venv/
+*.mp4
+*.pt
+__pycache__/
+.idea/
+.vscode/
