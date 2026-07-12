@@ -9,6 +9,8 @@ __pycache__/
 # Uploaded videos (not needed in repo)
 backend/uploads/*
 !backend/uploads/.gitkeep
+backend/outputs/*
+!backend/outputs/.gitkeep
 
 # Node / React
 node_modules/
