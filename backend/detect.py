@@ -107,7 +107,7 @@ while True:
         danger_start_time = None
         alert_triggered = False
 
-    cv2.imshow("CrowdPhysics - press Q to quit", frame)
+    cv2.imshow("SafeCrowd - press Q to quit", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 

@@ -45,7 +45,7 @@ function App() {
       <div className="console">
         <div className="header">
           <div className="eyebrow">Live physics-based crowd analysis</div>
-          <h1 className="title">CrowdPhysics</h1>
+          <h1 className="title">SafeCrowd</h1>
           <p className="subtitle">
             Upload footage of a crowd. The system measures density and flow
             convergence to estimate crush risk before it happens.

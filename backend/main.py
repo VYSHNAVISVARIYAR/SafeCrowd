@@ -28,7 +28,7 @@ model = YOLO(model_path)
 
 @app.get("/")
 def home():
-    return {"message": "CrowdPhysics API running"}
+    return {"message": "SafeCrowd API running"}
 
 
 @app.post("/upload")
