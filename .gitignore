@@ -1,8 +1,27 @@
+# Virtual environments
 venv/
-*.mp4
-*.pt
+backend/venv/
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Uploads
+uploads/*
+backend/uploads/*
+
+# Python cache files
 __pycache__/
+backend/__pycache__/
+*.pyc
+
+# Local environments / IDEs
+.env
+.env.*
 .idea/
 .vscode/
-uploads/
+
+# Binaries and logs
+*.pt
 *.log
+*.mp4

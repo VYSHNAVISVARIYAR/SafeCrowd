@@ -5,8 +5,21 @@ import numpy as np
 import winsound
 import time
 
-model = YOLO("yolov8n.pt")
-cap = cv2.VideoCapture("A_busy_urban_pedestrian_street.mp4")
+import os
+
+# Locate files dynamically since we moved into the backend folder
+model_path = "yolov8n.pt"
+if not os.path.exists(model_path) and os.path.exists("backend/" + model_path):
+    model_path = "backend/" + model_path
+
+video_path = "A_busy_urban_pedestrian_street.mp4"
+if not os.path.exists(video_path) and os.path.exists("../" + video_path):
+    video_path = "../" + video_path
+elif not os.path.exists(video_path) and os.path.exists("backend/" + video_path):
+    video_path = "backend/" + video_path
+
+model = YOLO(model_path)
+cap = cv2.VideoCapture(video_path)
 
 ret, prev_frame = cap.read()
 prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)

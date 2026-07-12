@@ -19,7 +19,11 @@ app.add_middleware(
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-model = YOLO("yolov8n.pt")
+# Locate model file dynamically
+model_path = "yolov8n.pt"
+if not os.path.exists(model_path) and os.path.exists("backend/" + model_path):
+    model_path = "backend/" + model_path
+model = YOLO(model_path)
 
 
 @app.get("/")
