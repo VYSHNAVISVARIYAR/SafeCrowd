@@ -1,12 +1,20 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
+import asyncio
 import cv2
 import numpy as np
 from ultralytics import YOLO
-import asyncio
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow all origins for now (dev only)
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -16,21 +24,18 @@ model = YOLO("yolov8n.pt")
 
 @app.get("/")
 def home():
-    return {"message": "SafeCrowd API running"}
+    return {"message": "CrowdPhysics API running"}
 
 
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
-    try:
-        save_path = os.path.join(UPLOAD_FOLDER, file.filename)
-        with open(save_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+    save_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    with open(save_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-        result = await asyncio.to_thread(analyze_video, save_path)
-        return result
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "traceback": traceback.format_exc()}
+    # run heavy CV/YOLO work in a background thread so server stays responsive
+    result = await asyncio.to_thread(analyze_video, save_path)
+    return result
 
 
 def analyze_video(video_path):
@@ -41,19 +46,21 @@ def analyze_video(video_path):
     if not ret:
         return {"error": "Could not read video"}
 
-    # Resize frame to speed up calculation (scale down to 480px width)
-    h, w = prev_frame.shape[:2]
-    scale = 480.0 / w if w > 480 else 1.0
-    target_w = int(w * scale)
-    target_h = int(h * scale)
+    # resize for speed (divergence math is scale-invariant, still accurate)
+    resize_width = 480
 
-    prev_frame_resized = cv2.resize(prev_frame, (target_w, target_h))
-    prev_gray = cv2.cvtColor(prev_frame_resized, cv2.COLOR_BGR2GRAY)
+    def resize_frame(f):
+        h, w = f.shape[:2]
+        scale = resize_width / w
+        return cv2.resize(f, (resize_width, int(h * scale)))
+
+    prev_frame = resize_frame(prev_frame)
+    prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
 
     frame_num = 0
     people_count = 0
     risk_history = []
-    max_risk = 0
+    max_risk = 0.0
     danger_frames = 0
     total_checked_frames = 0
 
@@ -62,9 +69,9 @@ def analyze_video(video_path):
         if not ret:
             break
 
+        frame = resize_frame(frame)
         frame_num += 1
-        frame_resized = cv2.resize(frame, (target_w, target_h))
-        gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         flow = cv2.calcOpticalFlowFarneback(
             prev_gray, gray, None,
@@ -78,7 +85,7 @@ def analyze_video(video_path):
         divergence = np.mean(d_dx_dx + d_dy_dy)
 
         if frame_num % 5 == 0:
-            results = model(frame_resized, verbose=False, conf=0.15)
+            results = model(frame, verbose=False, conf=0.15)
             people_count = sum(1 for box in results[0].boxes if int(box.cls[0]) == 0)
 
         density = people_count / frame_area_m2
@@ -108,6 +115,7 @@ def analyze_video(video_path):
     else:
         overall_status = "DANGER"
 
+    # cast numpy types (np.float64 / np.int64) to plain Python types so FastAPI can JSON-serialize
     return {
         "status": overall_status,
         "max_risk_score": round(float(max_risk), 2),
