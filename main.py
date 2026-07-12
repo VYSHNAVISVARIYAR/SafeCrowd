@@ -9,7 +9,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.get("/")
 def home():
-    return {"message": "CrowdPhysics API running"}
+    return {"message": "SafeCrowd API running"}
 
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
