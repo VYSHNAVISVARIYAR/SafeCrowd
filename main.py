@@ -51,7 +51,8 @@ def analyze_video(video_path):
             break
 
         frame_num += 1
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_resized = cv2.resize(frame, (target_w, target_h))
+        gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
 
         flow = cv2.calcOpticalFlowFarneback(
             prev_gray, gray, None,
@@ -65,7 +66,7 @@ def analyze_video(video_path):
         divergence = np.mean(d_dx_dx + d_dy_dy)
 
         if frame_num % 5 == 0:
-            results = model(frame, verbose=False, conf=0.15)
+            results = model(frame_resized, verbose=False, conf=0.15)
             people_count = sum(1 for box in results[0].boxes if int(box.cls[0]) == 0)
 
         density = people_count / frame_area_m2
