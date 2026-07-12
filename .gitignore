@@ -1,27 +1,22 @@
-# Virtual environments
+# Python
 venv/
-backend/venv/
-
-# Dependencies
-node_modules/
-frontend/node_modules/
-
-# Uploads
-uploads/*
-backend/uploads/*
-
-# Python cache files
 __pycache__/
-backend/__pycache__/
 *.pyc
 
-# Local environments / IDEs
-.env
-.env.*
-.idea/
-.vscode/
-
-# Binaries and logs
+# Model weights (large, auto-download on first run)
 *.pt
-*.log
-*.mp4
+
+# Uploaded videos (not needed in repo)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Node / React
+node_modules/
+frontend/dist/
+
+# Env files
+.env
+
+# OS
+.DS_Store
+Thumbs.db
